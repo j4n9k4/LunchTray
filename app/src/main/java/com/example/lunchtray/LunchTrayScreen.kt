@@ -17,14 +17,18 @@ package com.example.lunchtray
 
 
 import androidx.annotation.StringRes
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -32,18 +36,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
-import com.example.lunchtray.ui.OrderViewModel
-import androidx.compose.material3.Text
-import androidx.compose.ui.Alignment
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 import com.example.lunchtray.datasource.DataSource
 import com.example.lunchtray.ui.AccompanimentMenuScreen
 import com.example.lunchtray.ui.CheckoutScreen
 import com.example.lunchtray.ui.EntreeMenuScreen
+import com.example.lunchtray.ui.OrderViewModel
 import com.example.lunchtray.ui.SideDishMenuScreen
 import com.example.lunchtray.ui.StartOrderScreen
 
@@ -69,14 +71,17 @@ fun LunchTrayAppBar(
 )
 {
     TopAppBar(
-        title = {Text(stringResource(currentScreen.title))},
+        title = {Text(text = stringResource(currentScreen.title), modifier = Modifier.fillMaxWidth())},
         modifier = modifier,
+        colors = TopAppBarDefaults.mediumTopAppBarColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        ),
         navigationIcon = {
             if(canNavigateUp)
             {
                 IconButton(onClick = navigateUp) {
                     Icon(
-                        imageVector = Icons.Filled.ArrowBack,
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = stringResource(R.string.back_button)
                     )
                 }
@@ -86,10 +91,10 @@ fun LunchTrayAppBar(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-private fun cancelNavigation(navController: NavController)
+private fun cancelNavigation(viewModel: OrderViewModel, navController: NavController)
 {
-    navController.navigate(route = LunchTrayScreens.Start.name)
+    viewModel.resetOrder()
+    navController.popBackStack(LunchTrayScreens.Start.name, false)
 }
 @Composable
 fun LunchTrayApp() {
@@ -107,9 +112,9 @@ fun LunchTrayApp() {
     Scaffold(
         topBar = {
             LunchTrayAppBar(
-                currentScreen = LunchTrayScreens.Start,
-                canNavigateUp = false,
-                navigateUp = {}
+                currentScreen = currentScreen,
+                canNavigateUp = navController.previousBackStackEntry != null,
+                navigateUp = {navController.navigateUp()}
             )
         }
     ) { innerPadding ->
@@ -130,7 +135,7 @@ fun LunchTrayApp() {
             composable(route = LunchTrayScreens.Entree.name){
                 EntreeMenuScreen(
                     options = DataSource.entreeMenuItems,
-                    onCancelButtonClicked = { cancelNavigation(navController) },
+                    onCancelButtonClicked = { cancelNavigation(viewModel,navController) },
                     onSelectionChanged = { viewModel.updateEntree(it)},
                     onNextButtonClicked = {navController.navigate(LunchTrayScreens.SideDish.name)}
                 )
@@ -138,7 +143,7 @@ fun LunchTrayApp() {
             composable(route = LunchTrayScreens.SideDish.name){
                 SideDishMenuScreen(
                     options = DataSource.sideDishMenuItems,
-                    onCancelButtonClicked = { cancelNavigation(navController) },
+                    onCancelButtonClicked = { cancelNavigation(viewModel,navController) },
                     onSelectionChanged = {viewModel.updateSideDish(it)},
                     onNextButtonClicked = {navController.navigate(LunchTrayScreens.Accompaniment.name)}
                 )
@@ -146,7 +151,7 @@ fun LunchTrayApp() {
             composable(route = LunchTrayScreens.Accompaniment.name){
                 AccompanimentMenuScreen(
                     options = DataSource.accompanimentMenuItems,
-                    onCancelButtonClicked = { cancelNavigation(navController) },
+                    onCancelButtonClicked = { cancelNavigation(viewModel,navController) },
                     onSelectionChanged = {viewModel.updateAccompaniment(it)},
                     onNextButtonClicked = {navController.navigate(LunchTrayScreens.Checkout.name)}
                 )
@@ -155,8 +160,8 @@ fun LunchTrayApp() {
             composable(route = LunchTrayScreens.Checkout.name){
                 CheckoutScreen(
                     orderUiState = uiState,
-                    onNextButtonClicked = { cancelNavigation(navController) },
-                    onCancelButtonClicked = { cancelNavigation(navController) }
+                    onNextButtonClicked = { cancelNavigation(viewModel,navController) },
+                    onCancelButtonClicked = { cancelNavigation(viewModel,navController) }
                 )
             }
 
