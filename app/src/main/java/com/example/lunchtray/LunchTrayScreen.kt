@@ -15,12 +15,21 @@
  */
 package com.example.lunchtray
 
+
 import androidx.annotation.StringRes
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -39,12 +48,38 @@ enum class LunchTrayScreens(@StringRes val title: Int)
 }
 
 // TODO: AppBar
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun LunchTrayAppBar(
+    currentScreen: LunchTrayScreens,
+    canNavigateUp: Boolean,
+    navigateUp: () -> Unit,
+    modifier: Modifier = Modifier
+)
+{
+    TopAppBar(
+        title = {Text(stringResource(currentScreen.title))},
+        modifier = modifier,
+        navigationIcon = {
+            if(canNavigateUp)
+            {
+                IconButton(onClick = navigateUp) {
+                    Icon(
+                        imageVector = Icons.Filled.ArrowBack,
+                        contentDescription = stringResource(R.string.back_button)
+                    )
+                }
+            }
+        },
+
+    )
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LunchTrayApp() {
     // TODO: Create Controller and initialization
-    val navController: NavController = rememberNavController()
+    val navController: NavHostController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
 
     val currentScreen = LunchTrayScreens.valueOf(
@@ -56,7 +91,11 @@ fun LunchTrayApp() {
 
     Scaffold(
         topBar = {
-            // TODO: AppBar
+            LunchTrayAppBar(
+                currentScreen = LunchTrayScreens.Start,
+                canNavigateUp = false,
+                navigateUp = {}
+            )
         }
     ) { innerPadding ->
         val uiState by viewModel.uiState.collectAsState()
